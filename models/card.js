@@ -3,13 +3,13 @@ const mongoose = require('mongoose');
 const cardSchema = new mongoose.Schema({
   name: {
     type: String,
-    reqired: true,
+    required: true,
     minlength: 2,
     maxlength: 30
   },
   link: {
     type: String,
-    reqired: true,
+    required: true,
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,
@@ -21,7 +21,10 @@ const cardSchema = new mongoose.Schema({
     ref: 'user',
     default: []
   }],
-  createdAt: {}
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
 });
 
 module.exports = mongoose.model('card', cardSchema);
