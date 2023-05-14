@@ -2,17 +2,12 @@ const Card = require('../models/card');
 const { checkAviability } = require('../utils/utils');
 
 const handleError = (err, res) => {
-  console.log(err.name)
-  if(err.name === 'ValidationError') {
+  if(err.name === 'ValidationError' || err.name === 'CastError') {
     res.status(400).send({ message: 'Переданы некорректные данные при создании карточки.' })
     return;
   }
-  if(err.name === 'NotFoundError' || err.name === 'CastError') {
+  if(err.name === 'NotFoundError') {
     res.status(404).send({ message: 'Карточка с указанным _id не найдена.' });
-    return;
-  }
-  if(err.name === 'LikeError') {
-    res.status(400).send({ message: 'Переданы некорректные данные для постановки/снятии лайка.' });
     return;
   }
   res.status(500).send({ message: `${err.name}: ${err.message}` });
@@ -51,7 +46,7 @@ const removeLike = (req, res) => {
   const userId = req.user._id;
   Card.findByIdAndUpdate(cardId, { $pull: { likes: userId } }, { new: true })
     .then(card => checkAviability(card, res))
-    .catch(err => andleError(err, res))
+    .catch(err => handleError(err, res))
 }
 
 module.exports = {
