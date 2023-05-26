@@ -1,4 +1,7 @@
+const bcrypt = require('bcrypt');
 const http2 = require('http2');
+
+const SALT_ROUNDS = 10;
 
 const {
   HTTP_STATUS_CREATED,
@@ -29,9 +32,14 @@ const getUsers = (req, res) => {
 
 const createUser = (req, res) => {
   const userData = req.body;
-  User.create(userData)
+  bcrypt.hash(req.body.password, SALT_ROUNDS)
+    .then((hash) => User.create({ ...userData, password: hash }))
     .then((user) => res.status(HTTP_STATUS_CREATED).send(user))
     .catch((err) => handleError(err, res));
+
+  // User.create(userData)
+  //   .then((user) => res.status(HTTP_STATUS_CREATED).send(user))
+  //   .catch((err) => handleError(err, res));
 };
 
 const getUserById = (req, res) => {
