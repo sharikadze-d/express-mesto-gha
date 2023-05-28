@@ -70,7 +70,7 @@ const updateAvatar = (req, res) => {
 
 const login = (req, res) => {
   const { email, password } = req.body;
-  User.findOne({ email })
+  User.findOne({ email }).select('+password')
     .then((user) => {
       if (!user) res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Invalid email or password' });
       bcrypt.compare(password, user.password)

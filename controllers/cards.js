@@ -1,5 +1,7 @@
 const http2 = require('http2');
 
+const NotFoundError = require('../errors/NotFoundError');
+
 const {
   HTTP_STATUS_CREATED,
   HTTP_STATUS_BAD_REQUEST,
@@ -37,8 +39,17 @@ const createCard = (req, res) => {
 
 const deleteCard = (req, res) => {
   const { cardId } = req.params;
-  Card.findByIdAndRemove(cardId)
-    .then((card) => checkAviability(card, res))
+  Card.findById(cardId)
+    .then((card) => {
+      if (!card) {
+        throw new NotFoundError('Not Found');
+      }
+      if (req.user._id !== card.owner._id.toString()) {
+        throw new Error('Ошибка доступа');
+      }
+      card.deleteOne();
+      res.send(card);
+    })
     .catch((err) => handleError(err, res));
 };
 
