@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const router = require('./routes/index');
 const { createUser, login } = require('./controllers/users');
 const auth = require('./middlewares/auth');
+const handleError = require('./middlewares/handleError');
 
 const app = express();
 const PORT = 3000;
@@ -15,5 +16,6 @@ app.use(express.json());
 app.use('/signin', login);
 app.use('/signup', createUser);
 app.use(auth, router);
+app.use(handleError);
 
 app.listen(PORT, console.log(`Server started at port ${PORT}`));
