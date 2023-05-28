@@ -1,6 +1,8 @@
 const bcrypt = require('bcrypt');
 const http2 = require('http2');
 
+const { getJwtToken } = require('../utils/jwt');
+
 const SALT_ROUNDS = 10;
 
 const {
@@ -8,11 +10,16 @@ const {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_NOT_FOUND,
   HTTP_STATUS_INTERNAL_SERVER_ERROR,
+  HTTP_STATUS_CONFLICT,
 } = http2.constants;
 const User = require('../models/user');
 const { checkAviability } = require('../utils/utils');
 
 const handleError = (err, res) => {
+  if (err.code === 11000) {
+    res.status(HTTP_STATUS_CONFLICT).send({ message: 'Пользователь с таким email уже существует' });
+    return;
+  }
   if (err.name === 'ValidationError' || err.name === 'CastError') {
     res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Переданы некорректные данные при обновлении профиля.' });
     return;
@@ -36,10 +43,6 @@ const createUser = (req, res) => {
     .then((hash) => User.create({ ...userData, password: hash }))
     .then((user) => res.status(HTTP_STATUS_CREATED).send(user))
     .catch((err) => handleError(err, res));
-
-  // User.create(userData)
-  //   .then((user) => res.status(HTTP_STATUS_CREATED).send(user))
-  //   .catch((err) => handleError(err, res));
 };
 
 const getUserById = (req, res) => {
@@ -65,10 +68,28 @@ const updateAvatar = (req, res) => {
     .catch((err) => handleError(err, res));
 };
 
+const login = (req, res) => {
+  const { email, password } = req.body;
+  User.findOne({ email })
+    .then((user) => {
+      if (!user) res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Invalid email or password' });
+      bcrypt.compare(password, user.password)
+        .then((matched) => {
+          if (!matched) {
+            res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Invalid email or password' });
+            return;
+          }
+          res.cookie('jwt', getJwtToken(user._id));
+          res.send(getJwtToken(user._id));
+        });
+    });
+};
+
 module.exports = {
   getUsers,
   getUserById,
   createUser,
   updateProfile,
   updateAvatar,
+  login,
 };
