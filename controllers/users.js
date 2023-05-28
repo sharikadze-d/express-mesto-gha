@@ -85,6 +85,12 @@ const login = (req, res) => {
     });
 };
 
+const getUserData = (req, res) => {
+  User.findById(req.user._id)
+    .then((user) => checkAviability(user, res))
+    .catch((err) => handleError(err, res));
+};
+
 module.exports = {
   getUsers,
   getUserById,
@@ -92,4 +98,5 @@ module.exports = {
   updateProfile,
   updateAvatar,
   login,
+  getUserData,
 };
