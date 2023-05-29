@@ -22,8 +22,19 @@ const createCardValidation = celebrate({
   }),
 });
 
+const createUserValidation = celebrate({
+  body: Joi.object().keys({
+    name: Joi.string().min(2).max(30),
+    about: Joi.string().min(2).max(30),
+    email: Joi.string().email().required(),
+    password: Joi.string().required().min(2),
+    avatar: Joi.string().pattern(REGEXP_LINK),
+  }),
+});
+
 module.exports = {
   avatarUpdateValidation,
   profileUpdateValidation,
   createCardValidation,
+  createUserValidation,
 };

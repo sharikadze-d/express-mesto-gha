@@ -1,14 +1,11 @@
-const http2 = require('http2');
 const { verify } = require('../utils/jwt');
+const UnauthorizedError = require('../errors/UnauthoriedError');
 
 module.exports = (req, res, next) => {
   const { authorization } = req.headers;
 
   if (!authorization || !authorization.startsWith('Bearer ')) {
-    res
-      .status(http2.constants.HTTP_STATUS_BAD_REQUEST)
-      .send({ message: 'Необходима авторизация' });
-    return;
+    Promise.reject(new UnauthorizedError('Необходима авторизация'));
   }
 
   const token = authorization.replace('Bearer ', '');
@@ -17,9 +14,7 @@ module.exports = (req, res, next) => {
   try {
     payload = verify(token);
   } catch (err) {
-    res
-      .status(http2.constants.HTTP_STATUS_BAD_REQUEST)
-      .send({ message: 'Необходима авторизация' });
+    Promise.reject(new UnauthorizedError('Необходима авторизация'));
   }
 
   req.user = payload;
