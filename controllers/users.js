@@ -7,6 +7,7 @@ const NotFoundError = require('../errors/NotFoundError');
 const AlreadyExistError = require('../errors/AlreadyExistError');
 const ServerError = require('../errors/SererError');
 const ValidationError = require('../errors/ValidationError');
+const UnauthorizedError = require('../errors/UnauthoriedError');
 
 const SALT_ROUNDS = 10;
 
@@ -42,7 +43,8 @@ const createUser = (req, res, next) => {
   const userData = req.body;
   bcrypt.hash(req.body.password, SALT_ROUNDS)
     .then((hash) => User.create({ ...userData, password: hash }))
-    .then((user) => res.status(HTTP_STATUS_CREATED).send(user))
+    .then((user) => user.toObject({ useProjection: true }))
+    .then((noPassUser) => res.status(HTTP_STATUS_CREATED).send(noPassUser))
     .catch((err) => handleError(err, next));
 };
 
@@ -73,14 +75,14 @@ const login = (req, res, next) => {
   const { email, password } = req.body;
   User.findOne({ email }).select('+password')
     .then((user) => {
-      if (!user) throw new ValidationError('Неверный email или пароль');
+      if (!user) throw new UnauthorizedError('Неверный email или пароль');
       bcrypt.compare(password, user.password)
         .then((matched) => {
           if (!matched) {
-            throw new ValidationError('Неверный email или пароль');
+            throw new UnauthorizedError('Неверный email или пароль');
           }
           res.cookie('jwt', getJwtToken(user._id));
-          res.send(getJwtToken(user._id));
+          res.send(user);
         })
         .catch(next);
     })
