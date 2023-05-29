@@ -1,48 +1,45 @@
-const http2 = require('http2');
+const { HTTP_STATUS_CREATED } = require('http2').constants;
 
 const NotFoundError = require('../errors/NotFoundError');
+const ServerError = require('../errors/SererError');
+const ValidationError = require('../errors/ValidationError');
 
-const {
-  HTTP_STATUS_CREATED,
-  HTTP_STATUS_BAD_REQUEST,
-  HTTP_STATUS_NOT_FOUND,
-  HTTP_STATUS_INTERNAL_SERVER_ERROR,
-} = http2.constants;
 const Card = require('../models/card');
 const { checkAviability } = require('../utils/utils');
 
-const handleError = (err, res) => {
-  if (err.name === 'ValidationError' || err.name === 'CastError') {
-    res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Переданы некорректные данные при создании карточки.' });
-    return;
-  }
-  if (err.name === 'NotFoundError') {
-    res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Карточка с указанным _id не найдена.' });
-    return;
-  }
-  res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Произошла ошибка на сервере.' });
+const handleError = (err, next) => {
+  (function switchError() {
+    if (err.name === 'ValidationError' || err.name === 'CastError') {
+      return Promise.reject(new ValidationError('Переданы некорректные данные при создании карточки.'));
+    }
+    if (err.name === 'NotFoundError') {
+      return Promise.reject(new NotFoundError('Карточка с указанным _id не найдена.'));
+    }
+    return Promise.reject(new ServerError('Произошла ошибка на сервере.'));
+  }())
+    .catch(next);
 };
 
-const getCards = (req, res) => {
+const getCards = (req, res, next) => {
   Card.find({})
     .then((cards) => res.send(cards))
-    .catch((err) => handleError(err, res));
+    .catch((err) => handleError(err, next));
 };
 
-const createCard = (req, res) => {
+const createCard = (req, res, next) => {
   const { name, link } = req.body;
   const owner = req.user._id;
   Card.create({ name, link, owner })
     .then((card) => res.status(HTTP_STATUS_CREATED).send(card))
-    .catch((err) => handleError(err, res));
+    .catch((err) => handleError(err, next));
 };
 
-const deleteCard = (req, res) => {
+const deleteCard = (req, res, next) => {
   const { cardId } = req.params;
   Card.findById(cardId)
     .then((card) => {
       if (!card) {
-        throw new NotFoundError('Not Found');
+        throw new NotFoundError('Карточка не найден');
       }
       if (req.user._id !== card.owner._id.toString()) {
         throw new Error('Ошибка доступа');
@@ -50,22 +47,22 @@ const deleteCard = (req, res) => {
       card.deleteOne();
       res.send(card);
     })
-    .catch((err) => handleError(err, res));
+    .catch((err) => handleError(err, next));
 };
 
-const addLike = (req, res) => {
+const addLike = (req, res, next) => {
   const { cardId } = req.params;
   const userId = req.user._id;
   Card.findByIdAndUpdate(cardId, { $addToSet: { likes: userId } }, { new: true })
     .then((card) => checkAviability(card, res))
-    .catch((err) => handleError(err, res));
+    .catch((err) => handleError(err, next));
 };
-const removeLike = (req, res) => {
+const removeLike = (req, res, next) => {
   const { cardId } = req.params;
   const userId = req.user._id;
   Card.findByIdAndUpdate(cardId, { $pull: { likes: userId } }, { new: true })
     .then((card) => checkAviability(card, res))
-    .catch((err) => handleError(err, res));
+    .catch((err) => handleError(err, next));
 };
 
 module.exports = {
