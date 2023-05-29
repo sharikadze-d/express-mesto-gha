@@ -82,7 +82,7 @@ const login = (req, res, next) => {
             throw new UnauthorizedError('Неверный email или пароль');
           }
           res.cookie('jwt', getJwtToken(user._id));
-          res.send(getJwtToken(user._id));
+          res.send({ jwt: getJwtToken(user._id) });
         })
         .catch(next);
     })
