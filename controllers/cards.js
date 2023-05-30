@@ -48,9 +48,9 @@ const deleteCard = (req, res, next) => {
       if (req.user._id !== card.owner._id.toString()) {
         throw new ForbiddenError('Ошибка доступа.');
       }
-      card.deleteOne();
-      res.send(card);
+      return card.deleteOne();
     })
+    .then((card) => res.send(card))
     .catch((err) => handleError(err, next));
 };
 

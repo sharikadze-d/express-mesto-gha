@@ -1,6 +1,6 @@
 const { celebrate, Joi } = require('celebrate');
 
-const REGEXP_LINK = /https?:\/\/(www\.)?[A-Za-z\-._~:/?#[\]@!$&'()*+,;=]+#?/;
+const REGEXP_LINK = /https?:\/\/(www\.)?[0-9A-Za-z\-._~:/?#[\]@!$&'()*+,;=]+\.[a-zA-Z]{2,8}[0-9A-Za-z\-._~:/?#[\]@!$&'()*+,;=]*/;
 
 const avatarUpdateValidation = celebrate({
   body: Joi.object().keys({
