@@ -27,4 +27,4 @@ app.use(auth, router);
 app.use(errors());
 app.use(handleError);
 
-app.listen(PORT, console.log(`Server started at port ${PORT}`));
+app.listen(PORT);
