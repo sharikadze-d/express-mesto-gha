@@ -3,6 +3,7 @@ const { HTTP_STATUS_CREATED } = require('http2').constants;
 const NotFoundError = require('../errors/NotFoundError');
 const ServerError = require('../errors/SererError');
 const ValidationError = require('../errors/ValidationError');
+const ForbiddenError = require('../errors/ForbiddenError');
 
 const Card = require('../models/card');
 const { checkAviability } = require('../utils/utils');
@@ -14,6 +15,9 @@ const handleError = (err, next) => {
     }
     if (err.name === 'NotFoundError') {
       return Promise.reject(new NotFoundError('Карточка с указанным _id не найдена.'));
+    }
+    if (err.name === 'ForbiddenError') {
+      return Promise.reject(new ForbiddenError('Ошибка доступа.'));
     }
     return Promise.reject(new ServerError('Произошла ошибка на сервере.'));
   }())
@@ -39,10 +43,10 @@ const deleteCard = (req, res, next) => {
   Card.findById(cardId)
     .then((card) => {
       if (!card) {
-        throw new NotFoundError('Карточка не найден');
+        throw new NotFoundError('Карточка не найдена.');
       }
       if (req.user._id !== card.owner._id.toString()) {
-        throw new Error('Ошибка доступа');
+        throw new ForbiddenError('Ошибка доступа.');
       }
       card.deleteOne();
       res.send(card);
